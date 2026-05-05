@@ -247,10 +247,10 @@ export default function Game() {
   }
 
   return (
-    <main className="flex min-h-screen items-start justify-center overflow-hidden px-3 py-3 sm:px-6 sm:py-4">
-      <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-3 sm:gap-4">
+    <main className="flex min-h-screen items-center justify-center px-3 py-2 sm:px-6 sm:py-3">
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-4 sm:gap-5">
         <header className="w-full text-center">
-          <h1 className="mb-2 text-4xl font-extrabold tracking-widest sm:text-5xl">
+          <h1 className="mb-3 text-3xl font-extrabold tracking-widest sm:mb-4 sm:text-5xl">
             <span className="text-white">ДУ</span>
             <span className="text-[#00966E]">МИ</span>
             <span className="text-[#D62612]">ЧКИ</span>
@@ -281,7 +281,7 @@ export default function Game() {
           </button>
         </div>
 
-        <div className="flex w-full flex-col items-center">
+        <div className="flex min-h-[560px] w-full flex-col items-center">
           {view === "calendar" ? (
             <PreviousWords
               selectedDate={selectedDate}
@@ -289,15 +289,15 @@ export default function Game() {
             />
           ) : (
             <section className="flex w-full max-w-3xl flex-col items-center px-1">
-              <h2 className="mb-2 text-center text-xl font-black text-purple-100 sm:text-2xl">
+              <h2 className="mb-1.5 text-center text-xl font-black text-purple-100 sm:text-2xl">
                 {formatDate(selectedDate)}
               </h2>
 
-              <div className="grid w-full max-w-[430px] gap-1.5 sm:max-w-[470px]">
+              <div className="grid w-full max-w-[420px] gap-1 sm:max-w-[470px] sm:gap-1.5">
                 {rows.map((row, rowIndex) => (
                   <div
                     key={rowIndex}
-                    className={`grid grid-cols-7 gap-1.5 ${
+                    className={`grid grid-cols-7 gap-1 sm:gap-1.5 ${
                       shakingRow === rowIndex
                         ? "animate-[shakeRow_400ms_ease]"
                         : ""
@@ -325,7 +325,7 @@ export default function Game() {
                               : "0ms",
                           }}
                           className={[
-                            "flex aspect-square items-center justify-center border text-xl font-black uppercase transition-transform sm:text-3xl",
+                            "flex aspect-square items-center justify-center border text-lg font-black uppercase transition-transform sm:text-2xl",
                             isCurrentRow &&
                               cell.letter &&
                               "animate-[popTile_140ms_ease]",

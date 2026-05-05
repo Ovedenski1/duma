@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 
-const LETTERS = ["явертъуиопч", "асдфгхйклшщ", "зъцжбнмю"];
+const LETTERS = ["явертъуиопч", "асдфгхйклшщ", "зьцжбнмю"];
 
 type AdminWord = {
   play_date: string;

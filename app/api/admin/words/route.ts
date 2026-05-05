@@ -85,6 +85,19 @@ export async function POST(req: Request) {
     );
   }
 
+  const { data: existingWord } = await supabaseAdmin
+    .from("daily_words")
+    .select("play_date")
+    .eq("word", word)
+    .maybeSingle();
+
+  if (existingWord && existingWord.play_date !== playDate) {
+    return NextResponse.json(
+      { error: "Тази дума вече е използвана за друга дата." },
+      { status: 400 }
+    );
+  }
+
   const { error } = await supabaseAdmin.from("daily_words").upsert(
     {
       word,

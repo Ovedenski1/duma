@@ -5,7 +5,7 @@ import { LetterStatus } from "@/lib/types";
 const rows = [
   "явертъуиопч".split(""),
   "асдфгхйклшщ".split(""),
-  ["ENTER", ..."зъцжбнмю".split(""), "BACKSPACE"],
+  ["ENTER", ..."зьцжбнмю".split(""), "BACKSPACE"],
 ];
 
 type Props = {
