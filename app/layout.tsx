@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
 
 const siteUrl = "https://dumichki.bg";
 
@@ -60,7 +61,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="bg">
-      <body>{children}</body>
+      <body>
+        {children}
+
+        {/* 🔥 Vercel Analytics */}
+        <Analytics />
+      </body>
     </html>
   );
 }
