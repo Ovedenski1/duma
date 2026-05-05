@@ -3,9 +3,9 @@
 import { LetterStatus } from "@/lib/types";
 
 const rows = [
-  "явертъуиопч".split(""),     // 👈 added Ч
-  "асдфгхйклшщ".split(""),     // 👈 added Ш Щ
-  ["ENTER", ..."зъцжбнмю".split(""), "BACKSPACE"], // 👈 added Ю
+  "явертъуиопч".split(""),
+  "асдфгхйклшщ".split(""),
+  ["ENTER", ..."зъцжбнмю".split(""), "BACKSPACE"],
 ];
 
 type Props = {
@@ -25,7 +25,7 @@ export default function Keyboard({ statuses, onKey }: Props) {
   }
 
   return (
-    <div className="mt-3 w-full max-w-[640px] space-y-1.5">
+    <div className="mt-3 w-full max-w-[660px] space-y-1.5">
       {rows.map((row, i) => (
         <div key={i} className="flex justify-center gap-1 sm:gap-1.5">
           {row.map((key) => {
@@ -36,13 +36,10 @@ export default function Keyboard({ statuses, onKey }: Props) {
                 key={key}
                 onClick={() => onKey(key)}
                 className={[
-                  "h-10 flex items-center justify-center font-black uppercase shadow transition",
-
-                  // responsive sizing (keeps everything fitting)
+                  "flex h-10 items-center justify-center font-black uppercase shadow transition",
                   isSpecial
-                    ? "min-w-[50px] px-2 text-[8px] sm:min-w-[78px] sm:px-3 sm:text-sm"
-                    : "w-[28px] text-[10px] sm:w-[43px] sm:text-sm",
-
+                    ? "min-w-[54px] px-2 text-[8px] sm:min-w-[78px] sm:px-3 sm:text-sm"
+                    : "w-[30px] text-[10px] sm:w-[43px] sm:text-sm",
                   keyClass(key),
                 ].join(" ")}
               >

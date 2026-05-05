@@ -73,12 +73,11 @@ export async function POST(req: Request) {
   }
 
   if (!GUESSES.includes(guess)) {
-    return NextResponse.json(
-      { error: "Това не е валидна дума." },
-      { status: 400 }
-    );
-  }
-
+  return NextResponse.json({
+    valid: false,
+    error: "Това не е валидна дума.",
+  });
+}
   const { data, error } = await supabaseAdmin
     .from("daily_words")
     .select("word")
