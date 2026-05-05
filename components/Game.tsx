@@ -156,7 +156,7 @@ export default function Game() {
 
     const data = await res.json();
 
-   if (data.valid === false) {
+  if (data.valid === false) {
   setMessage(data.error);
   shakeCurrentRow();
   return;
@@ -247,16 +247,19 @@ if (!res.ok) {
   }
 
   return (
-    <main className="flex min-h-dvh items-start px-3 py-3 sm:items-center sm:px-6 sm:py-5">
-      <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-3 sm:gap-6">
+    <main className="flex min-h-screen items-center px-3 py-3 sm:px-6 sm:py-5">
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-5 sm:gap-6">
+
+        {/* HEADER */}
         <header className="w-full text-center">
-          <h1 className="mb-2 text-3xl font-extrabold tracking-widest sm:mb-6 sm:text-5xl">
+          <h1 className="mb-4 text-3xl font-extrabold tracking-widest sm:mb-6 sm:text-5xl">
             <span className="text-white">ДУ</span>
             <span className="text-[#00966E]">МИ</span>
             <span className="text-[#D62612]">ЧКИ</span>
           </h1>
         </header>
 
+        {/* TABS */}
         <div className="flex w-full max-w-2xl rounded-2xl border border-purple-300/20 bg-white/10 p-1 backdrop-blur">
           <button
             onClick={() => setView("game")}
@@ -281,7 +284,8 @@ if (!res.ok) {
           </button>
         </div>
 
-        <div className="flex w-full flex-col items-center sm:min-h-[620px]">
+        {/* CONTENT */}
+        <div className="flex min-h-[620px] w-full flex-col items-center">
           {view === "calendar" ? (
             <PreviousWords
               selectedDate={selectedDate}
@@ -289,6 +293,7 @@ if (!res.ok) {
             />
           ) : (
             <section className="flex w-full max-w-3xl flex-col items-center px-1">
+
               <h2 className="mb-2 text-center text-xl font-black text-purple-100 sm:text-2xl">
                 {formatDate(selectedDate)}
               </h2>
@@ -331,6 +336,8 @@ if (!res.ok) {
                               "animate-[popTile_140ms_ease]",
                             isFlipping &&
                               "animate-[flipTile_700ms_ease_forwards]",
+
+                            // 🔥 RED FLASH WHEN SHAKE
                             isShaking
                               ? "border-red-400 bg-red-600"
                               : visibleStatus === "correct"
@@ -350,6 +357,7 @@ if (!res.ok) {
                 ))}
               </div>
 
+              {/* RESULT */}
               <div className="mt-2 min-h-8 text-center">
                 {completed ? (
                   <div className="animate-[resultPulse_450ms_ease]">
@@ -358,7 +366,7 @@ if (!res.ok) {
                     </p>
 
                     {!won && answer && (
-                      <div className="mt-2 border border-red-300 bg-red-600 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-red-600/30 sm:px-4 sm:py-2 sm:text-sm">
+                      <div className="mt-2 border border-red-300 bg-red-600 px-4 py-2 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-red-600/30">
                         Думата беше: {answer}
                       </div>
                     )}

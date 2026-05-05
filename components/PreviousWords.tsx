@@ -13,6 +13,8 @@ type Props = {
   onSelectDate: (date: string) => void;
 };
 
+let cachedDates: WordDate[] | null = null;
+
 function localDateString(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -29,27 +31,48 @@ function getMonthName(date: Date) {
 }
 
 export default function PreviousWords({ selectedDate, onSelectDate }: Props) {
-  const [dates, setDates] = useState<WordDate[]>([]);
-  const [games, setGames] = useState<StoredGame[]>([]);
+  const [dates, setDates] = useState<WordDate[]>(cachedDates || []);
+  const [games, setGames] = useState<StoredGame[]>(() => loadAllGames());
+  const [loading, setLoading] = useState(!cachedDates);
 
   const [monthDate, setMonthDate] = useState(() => {
     const d = new Date(`${selectedDate}T00:00:00`);
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
 
-  async function loadDates() {
-    const res = await fetch("/api/words");
-    const data = await res.json();
+  useEffect(() => {
+    let active = true;
 
-    if (res.ok) {
-      setDates(data.words || []);
+    async function loadDates() {
+      setGames(loadAllGames());
+
+      if (cachedDates) {
+        setDates(cachedDates);
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+
+      const res = await fetch("/api/words");
+      const data = await res.json();
+
+      if (!active) return;
+
+      if (res.ok) {
+        const nextDates: WordDate[] = data.words || [];
+cachedDates = nextDates;
+setDates(nextDates);
+      }
+
+      setLoading(false);
     }
 
-    setGames(loadAllGames());
-  }
-
-  useEffect(() => {
     loadDates();
+
+    return () => {
+      active = false;
+    };
   }, [selectedDate]);
 
   const availableDates = useMemo(
@@ -110,60 +133,66 @@ export default function PreviousWords({ selectedDate, onSelectDate }: Props) {
   }
 
   return (
-    <section className="mx-auto w-full max-w-[620px] px-1">
+    <section className="mx-auto w-full max-w-2xl px-1">
       <div className="mb-3 flex items-center justify-between gap-3">
         <button
           onClick={() => changeMonth(-1)}
-          className="border border-purple-300/20 bg-purple-950/70 px-3 py-1.5 text-sm font-black transition hover:bg-purple-800 sm:px-4 sm:py-2"
+          className="border border-purple-300/20 bg-purple-950/70 px-4 py-2 font-black transition hover:bg-purple-800"
         >
           ←
         </button>
 
         <div className="text-center">
-          <h2 className="text-xl font-black capitalize text-purple-100 sm:text-2xl">
+          <h2 className="text-2xl font-black capitalize text-purple-100 sm:text-3xl">
             {getMonthName(monthDate)}
           </h2>
-          <p className="text-[10px] text-purple-100/60 sm:text-xs">Избери ден</p>
+          <p className="text-xs text-purple-100/60">Избери ден</p>
         </div>
 
         <button
           onClick={() => changeMonth(1)}
-          className="border border-purple-300/20 bg-purple-950/70 px-3 py-1.5 text-sm font-black transition hover:bg-purple-800 sm:px-4 sm:py-2"
+          className="border border-purple-300/20 bg-purple-950/70 px-4 py-2 font-black transition hover:bg-purple-800"
         >
           →
         </button>
       </div>
 
-      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[9px] font-black uppercase tracking-widest text-purple-100/50 sm:gap-1.5 sm:text-[10px]">
+      <div className="mb-2 grid grid-cols-7 gap-1 text-center text-[10px] font-black uppercase tracking-widest text-purple-100/50 sm:gap-2 sm:text-xs">
         {["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"].map((day) => (
           <div key={day}>{day}</div>
         ))}
       </div>
 
-      <div className="mx-auto grid max-w-[520px] grid-cols-7 gap-1 sm:gap-1.5">
-        {calendarDays.map((date, index) => {
-          if (!date) return <div key={index} className="aspect-square" />;
+      {loading ? (
+        <div className="flex h-[360px] items-center justify-center text-sm font-bold text-purple-100/60">
+          Зареждане...
+        </div>
+      ) : (
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
+          {calendarDays.map((date, index) => {
+            if (!date) return <div key={index} className="aspect-square" />;
 
-          const dateString = localDateString(date);
-          const available = availableDates.has(dateString);
-          const isSelected = selectedDate === dateString;
+            const dateString = localDateString(date);
+            const available = availableDates.has(dateString);
+            const isSelected = selectedDate === dateString;
 
-          return (
-            <button
-              key={dateString}
-              disabled={!available}
-              onClick={() => onSelectDate(dateString)}
-              className={[
-                "flex aspect-square items-center justify-center border text-xs font-black transition sm:text-sm",
-                dayClass(dateString),
-                isSelected ? "ring-2 ring-purple-300/60" : "",
-              ].join(" ")}
-            >
-              {date.getDate()}
-            </button>
-          );
-        })}
-      </div>
+            return (
+              <button
+                key={dateString}
+                disabled={!available}
+                onClick={() => onSelectDate(dateString)}
+                className={[
+                  "relative flex aspect-square items-center justify-center border text-xs font-black transition sm:text-base",
+                  dayClass(dateString),
+                  isSelected ? "ring-2 ring-purple-300/60" : "",
+                ].join(" ")}
+              >
+                {date.getDate()}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
