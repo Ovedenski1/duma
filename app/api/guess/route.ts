@@ -72,12 +72,6 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!GUESSES.includes(guess)) {
-  return NextResponse.json({
-    valid: false,
-    error: "Това не е валидна дума.",
-  });
-}
   const { data, error } = await supabaseAdmin
     .from("daily_words")
     .select("word")
@@ -92,9 +86,28 @@ export async function POST(req: Request) {
   }
 
   const answer = normalizeWord(data.word);
+
+  const inStaticList = GUESSES.includes(guess);
+
+  const { data: validWord } = await supabaseAdmin
+    .from("valid_words")
+    .select("word")
+    .eq("word", guess)
+    .maybeSingle();
+
+  const inDatabaseList = Boolean(validWord);
+
+  if (guess !== answer && !inStaticList && !inDatabaseList) {
+    return NextResponse.json({
+      valid: false,
+      error: "Това не е валидна дума.",
+    });
+  }
+
   const result = scoreGuess(guess, answer);
 
   return NextResponse.json({
+    valid: true,
     result,
     won: guess === answer,
     answer,

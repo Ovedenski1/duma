@@ -110,5 +110,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  await supabaseAdmin.from("valid_words").upsert(
+    {
+      word,
+    },
+    { onConflict: "word" }
+  );
+
   return NextResponse.json({ success: true });
 }
