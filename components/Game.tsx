@@ -5,7 +5,7 @@ import confetti from "canvas-confetti";
 import Keyboard from "./Keyboard";
 import PreviousWords from "./PreviousWords";
 import Footer from "./Footer";
-import { GuessResult, LetterStatus, StoredGame } from "@/lib/types";
+import { GuessResult, HintData, LetterStatus, StoredGame } from "@/lib/types";
 import { loadGame, saveGame } from "@/lib/storage";
 
 const WORD_LENGTH = 7;
@@ -14,7 +14,12 @@ const FLIP_DELAY = 260;
 const FLIP_DURATION = 700;
 
 function todayString() {
-  return new Date().toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Sofia",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 function formatDate(dateStr: string) {
@@ -66,6 +71,10 @@ export default function Game() {
   const [flippingRow, setFlippingRow] = useState<number | null>(null);
   const [revealedTile, setRevealedTile] = useState(-1);
 
+  const [hintMode, setHintMode] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
+  const [hint, setHint] = useState<HintData | null>(null);
+
   useEffect(() => {
     const saved = loadGame(selectedDate);
 
@@ -74,11 +83,15 @@ export default function Game() {
       setStatuses(saved.statuses);
       setCompleted(saved.completed);
       setWon(saved.won);
+      setHintUsed(Boolean(saved.hintUsed));
+      setHint(saved.hint || null);
     } else {
       setGuesses([]);
       setStatuses([]);
       setCompleted(false);
       setWon(false);
+      setHintUsed(false);
+      setHint(null);
     }
 
     setCurrentGuess("");
@@ -87,6 +100,7 @@ export default function Game() {
     setShakingRow(null);
     setFlippingRow(null);
     setRevealedTile(-1);
+    setHintMode(false);
   }, [selectedDate]);
 
   const letterStatuses = useMemo(() => getLetterStatuses(statuses), [statuses]);
@@ -98,6 +112,8 @@ export default function Game() {
       statuses,
       completed,
       won,
+      hintUsed,
+      hint,
       ...next,
     });
   }
@@ -131,6 +147,47 @@ export default function Game() {
   function removeLetter() {
     if (completed || flippingRow !== null) return;
     setCurrentGuess((prev) => prev.slice(0, -1));
+  }
+
+  function startHint() {
+    if (completed || flippingRow !== null || hintUsed) return;
+
+    setHintMode(true);
+    setMessage("Избери кутийка за разкриване.");
+  }
+
+  async function revealHint(index: number) {
+    if (!hintMode || hintUsed || completed || flippingRow !== null) return;
+
+    const res = await fetch("/api/hint", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: selectedDate, index }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setMessage(data.error || "Възникна грешка.");
+      setHintMode(false);
+      return;
+    }
+
+    const nextHint: HintData = {
+      rowIndex: guesses.length,
+      index: data.index,
+      letter: data.letter,
+    };
+
+    setHint(nextHint);
+    setHintUsed(true);
+    setHintMode(false);
+    setMessage("Подсказката е използвана.");
+
+    persist({
+      hintUsed: true,
+      hint: nextHint,
+    });
   }
 
   async function submitGuess() {
@@ -179,6 +236,7 @@ export default function Game() {
     setCurrentGuess("");
     setFlippingRow(rowIndex);
     setRevealedTile(-1);
+    setHintMode(false);
 
     for (let i = 0; i < WORD_LENGTH; i++) {
       setTimeout(() => {
@@ -207,11 +265,18 @@ export default function Game() {
         statuses: nextStatuses,
         completed: didComplete,
         won: didWin,
+        hintUsed,
+        hint,
       });
     }, WORD_LENGTH * FLIP_DELAY + FLIP_DURATION);
   }
 
   function handleKey(key: string) {
+    if (hintMode) {
+      setHintMode(false);
+      setMessage("");
+    }
+
     if (key === "ENTER") submitGuess();
     else if (key === "BACKSPACE") removeLetter();
     else addLetter(key);
@@ -289,9 +354,24 @@ export default function Game() {
             />
           ) : (
             <section className="flex w-full max-w-3xl flex-col items-center px-1">
-              <h2 className="mb-1.5 text-center text-xl font-black text-purple-100 sm:text-2xl">
-                {formatDate(selectedDate)}
-              </h2>
+              <div className="relative mb-1.5 w-full max-w-[420px] sm:max-w-[470px]">
+                <h2 className="text-center text-xl font-black text-purple-100 sm:text-2xl">
+                  {formatDate(selectedDate)}
+                </h2>
+
+                <button
+                  onClick={startHint}
+                  disabled={completed || hintUsed || flippingRow !== null}
+                  className={[
+                    "absolute right-0 top-1/2 -translate-y-1/2 rounded-lg border px-2 py-1 text-[10px] font-black transition sm:text-xs",
+                    hintUsed
+                      ? "cursor-not-allowed border-zinc-500/40 bg-zinc-700/40 text-zinc-300 opacity-70"
+                      : "border-green-300/40 bg-green-500/20 text-green-100 hover:bg-green-500/30",
+                  ].join(" ")}
+                >
+                  {hintMode ? "Разкрий" : "Подсказка"}
+                </button>
+              </div>
 
               <div className="grid w-full max-w-[420px] gap-1 sm:max-w-[470px] sm:gap-1.5">
                 {rows.map((row, rowIndex) => (
@@ -309,6 +389,11 @@ export default function Game() {
                       const isFlipping = flippingRow === rowIndex;
                       const isShaking = shakingRow === rowIndex;
 
+                      const hintedHere =
+                        hint && isCurrentRow && cellIndex === hint.index;
+
+                      const showHintLetter = hintedHere && !cell.letter;
+
                       const tileRevealed =
                         !isFlipping || cellIndex <= revealedTile;
 
@@ -317,8 +402,10 @@ export default function Game() {
                         : "empty";
 
                       return (
-                        <div
+                        <button
                           key={cellIndex}
+                          type="button"
+                          onClick={() => revealHint(cellIndex)}
                           style={{
                             animationDelay: isFlipping
                               ? `${cellIndex * FLIP_DELAY}ms`
@@ -331,8 +418,15 @@ export default function Game() {
                               "animate-[popTile_140ms_ease]",
                             isFlipping &&
                               "animate-[flipTile_700ms_ease_forwards]",
+                            hintMode &&
+                              isCurrentRow &&
+                              "cursor-pointer border-green-300 bg-green-500/20 shadow-lg shadow-green-500/20",
+                            showHintLetter &&
+                              "border-green-300 bg-green-500 text-white shadow-lg shadow-green-500/40",
                             isShaking
                               ? "border-red-400 bg-red-600"
+                              : showHintLetter
+                              ? "border-green-300 bg-green-500"
                               : visibleStatus === "correct"
                               ? "border-green-400 bg-green-500"
                               : visibleStatus === "present"
@@ -340,10 +434,16 @@ export default function Game() {
                               : visibleStatus === "absent"
                               ? "border-zinc-500 bg-zinc-700"
                               : "border-purple-300/30 bg-purple-950/50",
-                          ].join(" ")}
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
                         >
-                          {cell.letter}
-                        </div>
+                          {showHintLetter
+                            ? hint.letter
+                            : hintMode && isCurrentRow && !cell.letter
+                            ? "?"
+                            : cell.letter}
+                        </button>
                       );
                     })}
                   </div>
